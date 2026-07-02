@@ -3,7 +3,6 @@ const getLanguageById=(lang)=>{
     const language={
         "c++":105,
         "java":91,
-        // "c":103,
         "javascript":102
     }
     return language[lang.toLowerCase()];
@@ -50,11 +49,7 @@ async function fetchData() {
 
 return await fetchData();
 }
-const waiting=async(timer)=>{
-    setTimeout(()=>{
-return 1;
-    },timer);
-}
+const waiting = (timer) => new Promise(resolve => setTimeout(resolve, timer));
 
 const submitToken=async(resultToken)=>{
 

@@ -2,7 +2,8 @@ import { useParams } from 'react-router';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
-import axiosClient from '../utils/axiosClient'
+import axiosClient from '../utils/axiosClient';
+import Navbar from './Navbar';
 
 function AdminUpload(){
     
@@ -98,10 +99,12 @@ function AdminUpload(){
       };
     
       return (
-        <div className="max-w-md mx-auto p-6">
-          <div className="card bg-base-100 shadow-xl">
+        <div className="min-h-screen bg-base-200">
+          <Navbar />
+          <div className="max-w-md mx-auto p-6 pt-10">
+          <div className="glass-card rounded-2xl shadow-xl">
             <div className="card-body">
-              <h2 className="card-title">Upload Video</h2>
+              <h2 className="card-title gradient-text">Upload Video Solution</h2>
               
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 {/* File Input */}
@@ -193,8 +196,8 @@ function AdminUpload(){
                   </button>
                 </div>
               </form>
-            
             </div>
+          </div>
           </div>
         </div>
     );
