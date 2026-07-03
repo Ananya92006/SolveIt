@@ -1,6 +1,6 @@
-import { useSelector, useDispatch } from 'react-redux';
-import { NavLink, useNavigate } from 'react-router';
-import { logoutUser } from '../authSlice';
+import { NavLink, useNavigate } from "react-router";
+import { useDispatch, useSelector } from "react-redux";
+import { logoutUser } from "../authSlice";
 
 function Navbar() {
   const dispatch = useDispatch();
@@ -9,10 +9,10 @@ function Navbar() {
 
   const handleLogout = () => {
     dispatch(logoutUser());
-    navigate('/login');
+    navigate("/login");
   };
 
-  const avatarLetter = user?.firstName?.charAt(0)?.toUpperCase() || 'U';
+  const avatarLetter = user?.firstName?.charAt(0)?.toUpperCase() || "U";
 
   return (
     <nav className="sticky top-0 z-50 bg-base-100/80 backdrop-blur-xl border-b border-base-content/5">
@@ -23,18 +23,38 @@ function Navbar() {
             <span className="text-2xl font-bold font-mono text-primary group-hover:scale-105 transition-transform duration-300">
               ⟨/⟩
             </span>
-            <span className="text-xl font-bold gradient-text">LeetCode</span>
+            <span className="text-xl font-bold gradient-text">SolveIt</span>
           </NavLink>
 
-          {/* Right side */}
-          <div className="flex items-center gap-3">
-            {/* Admin link */}
-            {user?.role === 'admin' && (
+          {/* Center Nav */}
+          <div className="hidden sm:flex items-center gap-1">
+            <NavLink
+              to="/"
+              end
+              className={({ isActive }) =>
+                `btn btn-ghost btn-sm rounded-lg transition-all duration-300 ${
+                  isActive ? "bg-primary/10 text-primary" : "text-base-content/70 hover:text-base-content"
+                }`
+              }
+            >
+              Home
+            </NavLink>
+            <NavLink
+              to="/problems"
+              className={({ isActive }) =>
+                `btn btn-ghost btn-sm rounded-lg transition-all duration-300 ${
+                  isActive ? "bg-primary/10 text-primary" : "text-base-content/70 hover:text-base-content"
+                }`
+              }
+            >
+              Problems
+            </NavLink>
+            {user?.role === "admin" && (
               <NavLink
                 to="/admin"
                 className={({ isActive }) =>
-                  `btn btn-ghost btn-sm text-sm font-medium transition-all duration-300 ${
-                    isActive ? 'text-primary bg-primary/10' : 'text-base-content/70 hover:text-primary'
+                  `btn btn-ghost btn-sm rounded-lg transition-all duration-300 ${
+                    isActive ? "bg-secondary/10 text-secondary" : "text-base-content/70 hover:text-base-content"
                   }`
                 }
               >
@@ -45,8 +65,10 @@ function Navbar() {
                 Admin
               </NavLink>
             )}
+          </div>
 
-            {/* User dropdown */}
+          {/* User dropdown */}
+          <div className="flex items-center gap-3">
             <div className="dropdown dropdown-end">
               <div
                 tabIndex={0}
@@ -63,10 +85,22 @@ function Navbar() {
               >
                 <li className="px-3 py-2 border-b border-base-content/10 mb-1">
                   <div className="flex flex-col gap-0.5 pointer-events-none">
-                    <span className="font-semibold text-base-content">{user?.firstName || 'User'}</span>
-                    <span className="text-xs text-base-content/50">{user?.emailId || ''}</span>
+                    <span className="font-semibold text-base-content">{user?.firstName || "User"}</span>
+                    <span className="text-xs text-base-content/50">{user?.emailId || ""}</span>
                   </div>
                 </li>
+                {/* Mobile nav links */}
+                <li className="sm:hidden">
+                  <NavLink to="/" className="rounded-lg">Home</NavLink>
+                </li>
+                <li className="sm:hidden">
+                  <NavLink to="/problems" className="rounded-lg">Problems</NavLink>
+                </li>
+                {user?.role === "admin" && (
+                  <li className="sm:hidden">
+                    <NavLink to="/admin" className="rounded-lg">Admin Panel</NavLink>
+                  </li>
+                )}
                 <li>
                   <button
                     onClick={handleLogout}

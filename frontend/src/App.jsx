@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { checkAuth } from "./authSlice";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import Home from "./pages/Home";
 import Homepage from "./pages/Homepage";
 import Admin from "./pages/Admin";
 import AdminPanel from "./components/AdminPanel";
@@ -25,6 +26,7 @@ function App() {
     return (
       <div className="min-h-screen bg-base-200 flex flex-col items-center justify-center gap-4">
         <span className="text-3xl font-bold font-mono gradient-text">⟨/⟩</span>
+        <span className="text-xl font-bold gradient-text">SolveIt</span>
         <span className="loading loading-dots loading-md text-primary"></span>
       </div>
     );
@@ -34,10 +36,14 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/" element={isAuthenticated ? <Homepage /> : <Navigate to="/signup" />} />
+      {/* Public auth routes */}
       <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
       <Route path="/signup" element={isAuthenticated ? <Navigate to="/" /> : <Signup />} />
-      <Route path="/problem/:problemId" element={<ProblemPage />} />
+
+      {/* Protected routes */}
+      <Route path="/" element={isAuthenticated ? <Home /> : <Navigate to="/signup" />} />
+      <Route path="/problems" element={isAuthenticated ? <Homepage /> : <Navigate to="/signup" />} />
+      <Route path="/problem/:problemId" element={isAuthenticated ? <ProblemPage /> : <Navigate to="/login" />} />
 
       {/* Admin routes */}
       <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/" />} />
@@ -46,6 +52,9 @@ function App() {
       <Route path="/admin/update" element={isAdmin ? <AdminUpdate /> : <Navigate to="/" />} />
       <Route path="/admin/upload/:problemId" element={isAdmin ? <AdminUpload /> : <Navigate to="/" />} />
       <Route path="/admin/video" element={isAdmin ? <AdminVideo /> : <Navigate to="/" />} />
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
 }

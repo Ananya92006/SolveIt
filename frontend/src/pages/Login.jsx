@@ -40,6 +40,7 @@ function Login() {
         <div className="text-center mb-8">
           <NavLink to="/" className="inline-flex items-center gap-2 group">
             <span className="text-4xl font-bold font-mono gradient-text">⟨/⟩</span>
+            <span className="text-2xl font-bold gradient-text">SolveIt</span>
           </NavLink>
           <h1 className="mt-3 text-2xl font-bold text-base-content">Welcome back</h1>
           <p className="mt-1 text-base-content/50 text-sm">Sign in to continue solving problems</p>
