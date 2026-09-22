@@ -102,11 +102,12 @@ const getAllProblem = async (req, res) => {
     // Auto-seed if database has 0 problems
     if (getProblem.length === 0 && DEFAULT_PROBLEMS.length > 0) {
       const creatorId = req.result ? req.result._id : null;
-      if (creatorId) {
-        const seeded = DEFAULT_PROBLEMS.map(p => ({ ...p, problemCreator: creatorId }));
-        await Problem.insertMany(seeded);
-        getProblem = await Problem.find({}).select("_id title difficulty tags");
-      }
+      const seeded = DEFAULT_PROBLEMS.map(p => ({
+        ...p,
+        problemCreator: creatorId || "6688f0000000000000000000"
+      }));
+      await Problem.insertMany(seeded);
+      getProblem = await Problem.find({}).select("_id title difficulty tags");
     }
 
     res.status(200).send(getProblem);
