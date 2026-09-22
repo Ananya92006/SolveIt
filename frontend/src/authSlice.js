@@ -71,6 +71,19 @@ export const logoutUser = createAsyncThunk(
   }
 );
 
+// Promote to admin
+export const promoteToAdmin = createAsyncThunk(
+  'auth/promoteToAdmin',
+  async (passcode, { rejectWithValue }) => {
+    try {
+      const response = await axiosClient.post('/user/makeAdmin', { passcode });
+      return response.data.user;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  }
+);
+
 // =======================
 // Slice
 // =======================
@@ -122,6 +135,21 @@ const authSlice = createSlice({
         state.error = action.payload || 'Something went wrong';
         state.isAuthenticated = false;
         state.user = null;
+      })
+
+      // PROMOTE TO ADMIN
+      .addCase(promoteToAdmin.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(promoteToAdmin.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload;
+        state.isAuthenticated = true;
+      })
+      .addCase(promoteToAdmin.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || 'Promotion to Admin failed';
       })
 
       // CHECK AUTH

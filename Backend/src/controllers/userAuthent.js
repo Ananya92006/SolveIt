@@ -19,16 +19,19 @@ const getCookieOptions = (maxAge) => {
 const register = async (req, res) => {
   try {
     validate(req.body);
-    const { firstName, emailId, password } = req.body;
+    const { firstName, emailId, password, adminSecretCode } = req.body;
+
+    const validAdminSecret = process.env.ADMIN_SECRET_KEY || 'admin123';
+    const role = (adminSecretCode && adminSecretCode.trim() === validAdminSecret) ? 'admin' : 'user';
 
     req.body.password = await bcrypt.hash(password, 10);
-    req.body.role = 'user';
+    req.body.role = role;
 
     const user = await User.create(req.body);
     const token = jwt.sign(
-      { _id: user._id, emailId: emailId, role: 'user' },
+      { _id: user._id, emailId: emailId, role: user.role },
       process.env.JWT_KEY,
-      { expiresIn: 60 * 60 }
+      { expiresIn: 60 * 60 * 24 }
     );
 
     const reply = {
@@ -38,10 +41,10 @@ const register = async (req, res) => {
       role: user.role,
     };
 
-    res.cookie('token', token, getCookieOptions(60 * 60 * 1000));
+    res.cookie('token', token, getCookieOptions(60 * 60 * 24 * 1000));
     res.status(201).json({
       user: reply,
-      message: "Registered successfully",
+      message: role === 'admin' ? "Registered successfully as Admin!" : "Registered successfully",
     });
   } catch (err) {
     res.status(400).json({ message: err.message || "Registration failed" });
@@ -50,7 +53,7 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    const { emailId, password } = req.body;
+    const { emailId, password, adminSecretCode } = req.body;
 
     if (!emailId) throw new Error("Invalid Credentials");
     if (!password) throw new Error("Invalid Credentials");
@@ -60,6 +63,12 @@ const login = async (req, res) => {
 
     const match = await bcrypt.compare(password, user.password);
     if (!match) throw new Error("Invalid Credentials");
+
+    const validAdminSecret = process.env.ADMIN_SECRET_KEY || 'admin123';
+    if (adminSecretCode && adminSecretCode.trim() === validAdminSecret && user.role !== 'admin') {
+      user.role = 'admin';
+      await user.save();
+    }
 
     const reply = {
       firstName: user.firstName,
@@ -71,26 +80,64 @@ const login = async (req, res) => {
     const token = jwt.sign(
       { _id: user._id, emailId: emailId, role: user.role },
       process.env.JWT_KEY,
-      { expiresIn: 60 * 60 }
+      { expiresIn: 60 * 60 * 24 }
     );
 
-    res.cookie('token', token, getCookieOptions(60 * 60 * 1000));
+    res.cookie('token', token, getCookieOptions(60 * 60 * 24 * 1000));
     res.status(201).json({
       user: reply,
-      message: "Logged in successfully",
+      message: user.role === 'admin' ? "Logged in as Admin" : "Logged in successfully",
     });
   } catch (err) {
     res.status(401).json({ message: err.message || "Login failed" });
   }
 };
 
+const makeAdmin = async (req, res) => {
+  try {
+    const { passcode } = req.body;
+    const validAdminSecret = process.env.ADMIN_SECRET_KEY || 'admin123';
+
+    if (!passcode || passcode.trim() !== validAdminSecret) {
+      return res.status(400).json({ message: "Invalid Admin Passcode! Use 'admin123'." });
+    }
+
+    const userId = req.result._id;
+    const user = await User.findByIdAndUpdate(userId, { role: 'admin' }, { new: true });
+
+    const token = jwt.sign(
+      { _id: user._id, emailId: user.emailId, role: 'admin' },
+      process.env.JWT_KEY,
+      { expiresIn: 60 * 60 * 24 }
+    );
+
+    const reply = {
+      firstName: user.firstName,
+      emailId: user.emailId,
+      _id: user._id,
+      role: 'admin',
+    };
+
+    res.cookie('token', token, getCookieOptions(60 * 60 * 24 * 1000));
+    res.status(200).json({
+      user: reply,
+      message: "Congratulations! You are now an Admin 🎉",
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message || "Failed to make admin" });
+  }
+};
+
 const logout = async (req, res) => {
   try {
     const { token } = req.cookies;
-    const payload = jwt.decode(token);
-
-    await redisClient.set(`token:${token}`, 'Blocked');
-    await redisClient.expireAt(`token:${token}`, payload.exp);
+    if (token) {
+      const payload = jwt.decode(token);
+      if (payload?.exp) {
+        await redisClient.set(`token:${token}`, 'Blocked');
+        await redisClient.expireAt(`token:${token}`, payload.exp);
+      }
+    }
 
     res.cookie("token", null, { ...getCookieOptions(0), expires: new Date(Date.now()) });
     res.status(200).json({ message: "Logged out successfully" });
@@ -105,16 +152,17 @@ const adminRegister = async (req, res) => {
     const { firstName, emailId, password } = req.body;
 
     req.body.password = await bcrypt.hash(password, 10);
+    req.body.role = 'admin';
 
     const user = await User.create(req.body);
     const token = jwt.sign(
       { _id: user._id, emailId: emailId, role: user.role },
       process.env.JWT_KEY,
-      { expiresIn: 60 * 60 }
+      { expiresIn: 60 * 60 * 24 }
     );
 
-    res.cookie('token', token, getCookieOptions(60 * 60 * 1000));
-    res.status(201).json({ message: "User registered successfully" });
+    res.cookie('token', token, getCookieOptions(60 * 60 * 24 * 1000));
+    res.status(201).json({ message: "Admin registered successfully" });
   } catch (err) {
     res.status(400).json({ message: err.message || "Registration failed" });
   }
@@ -131,4 +179,4 @@ const deleteProfile = async (req, res) => {
   }
 };
 
-module.exports = { register, login, logout, adminRegister, deleteProfile };
+module.exports = { register, login, logout, makeAdmin, adminRegister, deleteProfile };

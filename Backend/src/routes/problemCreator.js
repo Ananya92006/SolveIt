@@ -2,11 +2,12 @@ const express=require('express');
 const adminMiddleware=require("../middleware/adminMiddleware");
 
 const problemRouter=express.Router();
-const {createProblem,updateProblem,deleteProblem,getProblemById,getAllProblem,solvedAllProblembyUser,submittedProblem}=require("../controllers/userProblem");
+const {createProblem,updateProblem,deleteProblem,getProblemById,getAllProblem,seedProblems,solvedAllProblembyUser,submittedProblem}=require("../controllers/userProblem");
 const userMiddleware=require("../middleware/userMiddleware");
 
-//Creste a problem
+//Create a problem
 problemRouter.post("/create",adminMiddleware,createProblem);
+problemRouter.post("/seed",adminMiddleware,seedProblems);
 problemRouter.put("/update/:id",adminMiddleware,updateProblem);
 problemRouter.delete("/delete/:id",adminMiddleware,deleteProblem);
 

@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { NavLink } from "react-router";
 import Navbar from "../components/Navbar";
+import axiosClient from "../utils/axiosClient";
 
 const CARDS = [
   {
@@ -49,16 +51,70 @@ const CARDS = [
 ];
 
 function Admin() {
+  const [seeding, setSeeding] = useState(false);
+  const [seedResult, setSeedResult] = useState(null);
+  const [seedError, setSeedError] = useState(null);
+
+  const handleSeedProblems = async () => {
+    setSeeding(true);
+    setSeedResult(null);
+    setSeedError(null);
+    try {
+      const response = await axiosClient.post("/problem/seed");
+      setSeedResult(response.data);
+    } catch (err) {
+      setSeedError(err.response?.data?.message || err.message || "Seeding failed");
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-base-200">
       <Navbar />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
-        <div className="mb-10 animate-fade-in">
-          <p className="text-sm font-medium text-base-content/40 uppercase tracking-widest mb-1">Control Panel</p>
-          <h1 className="text-4xl font-bold gradient-text">Admin Dashboard</h1>
-          <p className="mt-2 text-base-content/50">Manage problems, solutions, and content on the platform.</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 animate-fade-in">
+          <div>
+            <p className="text-sm font-medium text-base-content/40 uppercase tracking-widest mb-1">Control Panel</p>
+            <h1 className="text-4xl font-bold gradient-text">Admin Dashboard</h1>
+            <p className="mt-2 text-base-content/50">Manage problems, solutions, and platform features.</p>
+          </div>
+          <button
+            onClick={handleSeedProblems}
+            disabled={seeding}
+            className="btn btn-secondary shadow-lg shadow-secondary/20 gap-2 shrink-0"
+          >
+            {seeding ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : (
+              <span>⚡</span>
+            )}
+            <span>{seeding ? "Seeding Problems..." : "Seed 10+ Standard Problems"}</span>
+          </button>
         </div>
+
+        {/* Seed notification */}
+        {seedResult && (
+          <div className="alert alert-success shadow-lg mb-8 animate-fade-in flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <div>
+                <p className="font-bold text-sm">{seedResult.message}</p>
+                <p className="text-xs opacity-90">Total problems active on SolveIt: {seedResult.totalProblems}</p>
+              </div>
+            </div>
+            <NavLink to="/problems" className="btn btn-sm btn-ghost bg-base-100/30">View Problems →</NavLink>
+          </div>
+        )}
+
+        {seedError && (
+          <div className="alert alert-error shadow-lg mb-8 animate-fade-in">
+            <span>{seedError}</span>
+          </div>
+        )}
 
         {/* Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 stagger-fade">

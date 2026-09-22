@@ -111,17 +111,18 @@ function ProblemPage() {
         {/* ─── LEFT PANEL ─── */}
         <div className="w-[45%] flex flex-col border-r border-base-content/10 overflow-hidden">
           {/* Left Tabs */}
-          <div className="flex border-b border-base-content/10 bg-base-100/50 px-2 pt-2 gap-1 shrink-0">
-            {["description", "solutions", "submissions"].map((tab) => (
+          <div className="flex border-b border-base-content/10 bg-base-100/50 px-2 pt-2 gap-1 shrink-0 overflow-x-auto">
+            {["description", "hints", "solutions", "submissions"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setLeftTab(tab)}
-                className={`px-4 py-2 text-sm font-medium rounded-t-lg capitalize transition-all duration-200 ${
+                className={`px-4 py-2 text-sm font-medium rounded-t-lg capitalize transition-all duration-200 flex items-center gap-1.5 shrink-0 ${
                   leftTab === tab
-                    ? "bg-base-200 text-primary border-b-2 border-primary"
+                    ? "bg-base-200 text-primary border-b-2 border-primary font-semibold"
                     : "text-base-content/50 hover:text-base-content"
                 }`}
               >
+                {tab === "hints" && <span>💡</span>}
                 {tab}
               </button>
             ))}
@@ -168,6 +169,49 @@ function ProblemPage() {
                     ))}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* ── AI Hints & Strategy ── */}
+            {leftTab === "hints" && (
+              <div className="space-y-4 animate-fade-in">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-bold text-base text-base-content flex items-center gap-2">
+                    <span>💡</span> Solution Hints & Strategy
+                  </h2>
+                  <span className="badge badge-primary badge-outline text-xs">AI Guided</span>
+                </div>
+
+                <div className="glass-card p-4 rounded-xl space-y-3 border-l-4 border-l-primary">
+                  <h3 className="font-semibold text-sm text-primary flex items-center gap-1.5">
+                    <span>🧠</span> Core Intuition
+                  </h3>
+                  <p className="text-xs text-base-content/80 leading-relaxed">
+                    Think about pattern requirements for <strong>{problem.tags || "this topic"}</strong>. Can you optimize brute force search from O(N²) down to O(N) or O(N log N) using an auxiliary hash table, two pointers, or stack?
+                  </p>
+                </div>
+
+                <div className="glass-card p-4 rounded-xl space-y-3 border-l-4 border-l-secondary">
+                  <h3 className="font-semibold text-sm text-secondary flex items-center gap-1.5">
+                    <span>⚡</span> Key Data Structure & Algorithm
+                  </h3>
+                  <ul className="text-xs text-base-content/80 space-y-1 list-disc list-inside">
+                    <li><strong>Primary Technique:</strong> {problem.tags === "array" ? "Hash Map or Two Pointers" : problem.tags === "string" ? "Frequency Array or Two Pointers" : problem.tags === "stack" ? "Monotonic / LIFO Stack" : problem.tags === "dp" ? "Dynamic Programming Array / Memoization" : "Optimal Traversal"}</li>
+                    <li><strong>Space-Time Target:</strong> Time O(N), Space O(N) or O(1).</li>
+                  </ul>
+                </div>
+
+                <div className="glass-card p-4 rounded-xl space-y-3 border-l-4 border-l-accent">
+                  <h3 className="font-semibold text-sm text-accent flex items-center gap-1.5">
+                    <span>📝</span> Step-by-Step Approach
+                  </h3>
+                  <ol className="text-xs text-base-content/80 space-y-2 list-decimal list-inside leading-relaxed">
+                    <li>Initialize your data structure or pointers to keep track of state.</li>
+                    <li>Iterate through the input items sequentially. Check edge cases like empty inputs or single elements.</li>
+                    <li>Compute required target value or state transition at each step.</li>
+                    <li>Return the computed result string, array, or boolean matching expected output.</li>
+                  </ol>
+                </div>
               </div>
             )}
 

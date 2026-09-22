@@ -16,17 +16,28 @@ function Login() {
   const navigate = useNavigate();
   const { loading, error } = useSelector((state) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
+  const [isAdminMode, setIsAdminMode] = useState(false);
+  const [adminCode, setAdminCode] = useState("admin123");
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm({ resolver: zodResolver(schema) });
 
   const onSubmit = async (data) => {
-    const result = await dispatch(loginUser(data));
+    const payload = isAdminMode
+      ? { ...data, adminSecretCode: adminCode }
+      : data;
+
+    const result = await dispatch(loginUser(payload));
     if (loginUser.fulfilled.match(result)) {
-      navigate("/");
+      if (result.payload?.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
     }
   };
 
@@ -42,11 +53,43 @@ function Login() {
             <span className="text-4xl font-bold font-mono gradient-text">⟨/⟩</span>
             <span className="text-2xl font-bold gradient-text">SolveIt</span>
           </NavLink>
-          <h1 className="mt-3 text-2xl font-bold text-base-content">Welcome back</h1>
-          <p className="mt-1 text-base-content/50 text-sm">Sign in to continue solving problems</p>
+          <h1 className="mt-3 text-2xl font-bold text-base-content">
+            {isAdminMode ? "Admin Sign In 🛡️" : "Welcome back"}
+          </h1>
+          <p className="mt-1 text-base-content/50 text-sm">
+            {isAdminMode
+              ? "Access platform management & problem controls"
+              : "Sign in to continue solving problems"}
+          </p>
         </div>
 
         <div className="glass-card rounded-2xl p-8 shadow-xl">
+          {/* Admin Mode Toggle Tabs */}
+          <div className="flex bg-base-300/60 p-1 rounded-xl mb-6 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => setIsAdminMode(false)}
+              className={`flex-1 py-2 rounded-lg transition-all ${
+                !isAdminMode
+                  ? "bg-primary text-primary-content shadow-md font-bold"
+                  : "text-base-content/60 hover:text-base-content"
+              }`}
+            >
+              User Login
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsAdminMode(true)}
+              className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1 ${
+                isAdminMode
+                  ? "bg-secondary text-secondary-content shadow-md font-bold"
+                  : "text-base-content/60 hover:text-base-content"
+              }`}
+            >
+              <span>🛡️</span> Admin Login
+            </button>
+          </div>
+
           {/* Auth error */}
           {error && (
             <div className="alert alert-error mb-6 py-3 text-sm animate-fade-in">
@@ -115,12 +158,39 @@ function Login() {
               )}
             </div>
 
+            {/* Optional Admin Passcode when Admin Mode is selected */}
+            {isAdminMode && (
+              <div className="form-control animate-fade-in">
+                <label className="label pb-1">
+                  <span className="label-text text-sm font-medium text-secondary">Admin Key / Passcode</span>
+                  <span className="label-text-alt text-xs text-base-content/50">Default: admin123</span>
+                </label>
+                <input
+                  type="password"
+                  value={adminCode}
+                  onChange={(e) => setAdminCode(e.target.value)}
+                  placeholder="admin123"
+                  className="input input-bordered w-full bg-base-300/50 focus:input-secondary text-sm"
+                />
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={loading}
-              className="btn btn-primary w-full mt-2 font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300"
+              className={`btn w-full mt-2 font-semibold shadow-lg transition-all duration-300 ${
+                isAdminMode
+                  ? "btn-secondary shadow-secondary/20 hover:shadow-secondary/40"
+                  : "btn-primary shadow-primary/20 hover:shadow-primary/40"
+              }`}
             >
-              {loading ? <span className="loading loading-spinner loading-sm" /> : "Sign In"}
+              {loading ? (
+                <span className="loading loading-spinner loading-sm" />
+              ) : isAdminMode ? (
+                "Sign In as Admin 🛡️"
+              ) : (
+                "Sign In"
+              )}
             </button>
           </form>
 

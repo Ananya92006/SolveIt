@@ -10,7 +10,7 @@ const DIFFICULTY_CONFIG = {
   hard:   { label: "Hard",   cls: "badge-error"   },
 };
 
-const TAG_OPTIONS = ["array", "linkedList", "graph", "dp"];
+const TAG_OPTIONS = ["array", "string", "linkedList", "graph", "dp", "math", "stack", "tree", "general"];
 
 function Homepage() {
   const { user } = useSelector((state) => state.auth);
@@ -56,7 +56,6 @@ function Homepage() {
   const solved   = solvedIds.size;
   const easyC    = problems.filter((p) => p.difficulty?.toLowerCase() === "easy").length;
   const mediumC  = problems.filter((p) => p.difficulty?.toLowerCase() === "medium").length;
-  const hardC    = problems.filter((p) => p.difficulty?.toLowerCase() === "hard").length;
 
   return (
     <div className="min-h-screen bg-base-200">
@@ -133,11 +132,18 @@ function Homepage() {
               <span className="loading loading-dots loading-md text-primary" />
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 gap-3">
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center px-4">
               <svg className="w-12 h-12 text-base-content/20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <p className="text-base-content/40 font-medium">No problems match your filters</p>
+              <p className="text-base-content/60 font-medium">No problems found</p>
+              {user?.role === "admin" ? (
+                <NavLink to="/admin" className="btn btn-secondary btn-sm gap-2">
+                  <span>⚡</span> Go to Admin Dashboard to Seed Problems
+                </NavLink>
+              ) : (
+                <p className="text-xs text-base-content/40">Try adjusting search query or filters above.</p>
+              )}
             </div>
           ) : (
             <table className="table table-pin-rows w-full">
