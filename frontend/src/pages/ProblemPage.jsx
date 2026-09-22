@@ -20,13 +20,19 @@ function ProblemPage() {
   const [language, setLanguage]       = useState("javascript");
   const [code, setCode]               = useState("");
 
-  const [leftTab, setLeftTab]         = useState("description"); // description | solutions | submissions
+  const [leftTab, setLeftTab]         = useState("description"); // description | hints | notes | solutions | submissions
   const [rightTab, setRightTab]       = useState("testcase");    // testcase | result
 
   const [running, setRunning]         = useState(false);
   const [submitting, setSubmitting]   = useState(false);
   const [runResult, setRunResult]     = useState(null);
   const [submitResult, setSubmitResult] = useState(null);
+
+  // New features: Bookmark & Notes
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [userNote, setUserNote]       = useState("");
+  const [savingNote, setSavingNote]   = useState(false);
+  const [noteStatus, setNoteStatus]   = useState("");
 
   // Fetch problem on mount
   useEffect(() => {
@@ -39,7 +45,41 @@ function ProblemPage() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
+
+    // Fetch user bookmark state & note
+    axiosClient.get("/problem/bookmark/list").then(({ data }) => {
+      if (Array.isArray(data)) {
+        setIsBookmarked(data.some(b => b._id === problemId));
+      }
+    }).catch(() => {});
+
+    axiosClient.get(`/problem/note/get/${problemId}`).then(({ data }) => {
+      if (data?.content) setUserNote(data.content);
+    }).catch(() => {});
   }, [problemId]);
+
+  const handleToggleBookmark = async () => {
+    try {
+      const { data } = await axiosClient.post("/problem/bookmark/toggle", { problemId });
+      setIsBookmarked(data.isBookmarked);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSaveNote = async () => {
+    setSavingNote(true);
+    setNoteStatus("");
+    try {
+      await axiosClient.post("/problem/note/save", { problemId, content: userNote });
+      setNoteStatus("Note saved!");
+      setTimeout(() => setNoteStatus(""), 3000);
+    } catch (err) {
+      setNoteStatus("Failed to save note");
+    } finally {
+      setSavingNote(false);
+    }
+  };
 
   // When language changes, load starter code
   const handleLanguageChange = useCallback(
@@ -112,7 +152,7 @@ function ProblemPage() {
         <div className="w-[45%] flex flex-col border-r border-base-content/10 overflow-hidden">
           {/* Left Tabs */}
           <div className="flex border-b border-base-content/10 bg-base-100/50 px-2 pt-2 gap-1 shrink-0 overflow-x-auto">
-            {["description", "hints", "solutions", "submissions"].map((tab) => (
+            {["description", "hints", "notes", "solutions", "submissions"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setLeftTab(tab)}
@@ -123,6 +163,7 @@ function ProblemPage() {
                 }`}
               >
                 {tab === "hints" && <span>💡</span>}
+                {tab === "notes" && <span>📝</span>}
                 {tab}
               </button>
             ))}
@@ -134,12 +175,21 @@ function ProblemPage() {
             {/* ── Description ── */}
             {leftTab === "description" && (
               <div className="space-y-5 animate-fade-in">
-                <div>
-                  <h1 className="text-xl font-bold text-base-content leading-tight">{problem.title}</h1>
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <span className={`badge badge-sm ${diffCfg.cls} badge-outline`}>{diffCfg.label}</span>
-                    <span className="badge badge-sm badge-ghost text-base-content/60">{problem.tags}</span>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h1 className="text-xl font-bold text-base-content leading-tight">{problem.title}</h1>
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      <span className={`badge badge-sm ${diffCfg.cls} badge-outline`}>{diffCfg.label}</span>
+                      <span className="badge badge-sm badge-ghost text-base-content/60">{problem.tags}</span>
+                    </div>
                   </div>
+                  <button
+                    onClick={handleToggleBookmark}
+                    className={`btn btn-circle btn-sm ${isBookmarked ? "btn-warning text-warning-content" : "btn-ghost text-base-content/40 hover:text-warning"}`}
+                    title={isBookmarked ? "Remove Bookmark" : "Bookmark Problem"}
+                  >
+                    {isBookmarked ? "★" : "☆"}
+                  </button>
                 </div>
 
                 <div className="prose prose-sm max-w-none text-base-content/80 leading-relaxed whitespace-pre-wrap text-sm">
@@ -169,6 +219,35 @@ function ProblemPage() {
                     ))}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* ── Notes ── */}
+            {leftTab === "notes" && (
+              <div className="space-y-4 animate-fade-in">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-bold text-base text-base-content flex items-center gap-2">
+                    <span>📝</span> Personal Study Notes
+                  </h2>
+                  {noteStatus && <span className="text-xs text-success font-semibold animate-fade-in">{noteStatus}</span>}
+                </div>
+
+                <textarea
+                  value={userNote}
+                  onChange={(e) => setUserNote(e.target.value)}
+                  placeholder="Write your key takeaways, edge case reminders, or approach notes here..."
+                  className="textarea textarea-bordered w-full h-64 bg-base-300/50 focus:bg-base-300 text-sm leading-relaxed"
+                />
+
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleSaveNote}
+                    disabled={savingNote}
+                    className="btn btn-primary btn-sm gap-2"
+                  >
+                    {savingNote ? <span className="loading loading-spinner loading-xs" /> : "Save Note"}
+                  </button>
+                </div>
               </div>
             )}
 

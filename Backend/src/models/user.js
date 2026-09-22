@@ -38,9 +38,18 @@ const userSchema = new Schema({
         }],
         unique:true
     },
+    bookmarks: [{
+        type: Schema.Types.ObjectId,
+        ref: 'problem'
+    }],
+    notes: [{
+        problemId: { type: Schema.Types.ObjectId, ref: 'problem' },
+        content: { type: String, default: '' },
+        updatedAt: { type: Date, default: Date.now }
+    }],
     password:{
-type:String,
-required:true
+        type:String,
+        required:true
     }
 },{
     timestamps:true

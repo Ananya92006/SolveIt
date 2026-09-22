@@ -16,6 +16,7 @@ function Homepage() {
   const { user } = useSelector((state) => state.auth);
   const [problems, setProblems]           = useState([]);
   const [solvedIds, setSolvedIds]         = useState(new Set());
+  const [bookmarkIds, setBookmarkIds]     = useState(new Set());
   const [loading, setLoading]             = useState(true);
   const [search, setSearch]               = useState("");
   const [filters, setFilters]             = useState({ difficulty: "all", tag: "all", status: "all" });
@@ -23,13 +24,17 @@ function Homepage() {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [{ data: allProblems }, { data: solvedData }] = await Promise.all([
+        const [{ data: allProblems }, { data: solvedData }, { data: bookmarkData }] = await Promise.all([
           axiosClient.get("/problem/getAllProblem"),
           user ? axiosClient.get("/problem/problemSolvedByUser") : Promise.resolve({ data: null }),
+          user ? axiosClient.get("/problem/bookmark/list") : Promise.resolve({ data: [] }),
         ]);
         setProblems(Array.isArray(allProblems) ? allProblems : []);
         const solved = solvedData?.problemSolved ?? solvedData?.solvedProblems ?? [];
         setSolvedIds(new Set(Array.isArray(solved) ? solved.map((p) => p._id) : []));
+
+        const bookmarks = Array.isArray(bookmarkData) ? bookmarkData : [];
+        setBookmarkIds(new Set(bookmarks.map((b) => b._id || b)));
       } catch {
         setProblems([]);
       } finally {
@@ -45,8 +50,9 @@ function Homepage() {
     const matchTag    = filters.tag        === "all" || p.tags === filters.tag;
     const matchStatus =
       filters.status === "all" ||
-      (filters.status === "solved"   && solvedIds.has(p._id)) ||
-      (filters.status === "unsolved" && !solvedIds.has(p._id));
+      (filters.status === "solved"     && solvedIds.has(p._id)) ||
+      (filters.status === "unsolved"   && !solvedIds.has(p._id)) ||
+      (filters.status === "bookmarked" && bookmarkIds.has(p._id));
     const matchSearch = p.title?.toLowerCase().includes(search.toLowerCase());
     return matchDiff && matchTag && matchStatus && matchSearch;
   });
@@ -100,6 +106,7 @@ function Homepage() {
             <option value="all">All Status</option>
             <option value="solved">Solved</option>
             <option value="unsolved">Unsolved</option>
+            <option value="bookmarked">⭐ Bookmarked</option>
           </select>
 
           <select

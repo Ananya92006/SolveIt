@@ -169,6 +169,69 @@ const submittedProblem = async (req, res) => {
   }
 };
 
+const toggleBookmark = async (req, res) => {
+  try {
+    const userId = req.result._id;
+    const { problemId } = req.body;
+    const user = await User.findById(userId);
+
+    const index = user.bookmarks.indexOf(problemId);
+    if (index > -1) {
+      user.bookmarks.splice(index, 1);
+    } else {
+      user.bookmarks.push(problemId);
+    }
+
+    await user.save();
+    res.status(200).json({ bookmarks: user.bookmarks, isBookmarked: index === -1 });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to toggle bookmark: " + err.message });
+  }
+};
+
+const getBookmarks = async (req, res) => {
+  try {
+    const userId = req.result._id;
+    const user = await User.findById(userId).populate("bookmarks", "_id title difficulty tags");
+    res.status(200).json(user.bookmarks || []);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch bookmarks: " + err.message });
+  }
+};
+
+const saveNote = async (req, res) => {
+  try {
+    const userId = req.result._id;
+    const { problemId, content } = req.body;
+    const user = await User.findById(userId);
+
+    const existingIndex = user.notes.findIndex(n => n.problemId.toString() === problemId);
+    if (existingIndex > -1) {
+      user.notes[existingIndex].content = content;
+      user.notes[existingIndex].updatedAt = new Date();
+    } else {
+      user.notes.push({ problemId, content, updatedAt: new Date() });
+    }
+
+    await user.save();
+    res.status(200).json({ message: "Note saved successfully!", note: content });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to save note: " + err.message });
+  }
+};
+
+const getNote = async (req, res) => {
+  try {
+    const userId = req.result._id;
+    const { pid } = req.params;
+    const user = await User.findById(userId);
+    const noteObj = user.notes.find(n => n.problemId.toString() === pid);
+    res.status(200).json({ content: noteObj ? noteObj.content : "" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch note: " + err.message });
+  }
+};
+
 module.exports = {
   createProblem,
   updateProblem,
@@ -177,5 +240,9 @@ module.exports = {
   getAllProblem,
   seedProblems,
   solvedAllProblembyUser,
-  submittedProblem
+  submittedProblem,
+  toggleBookmark,
+  getBookmarks,
+  saveNote,
+  getNote
 };
