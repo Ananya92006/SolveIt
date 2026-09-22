@@ -71,7 +71,7 @@ function Navbar() {
               >
                 Problems
               </NavLink>
-              {isAdmin ? (
+              {isAdmin && (
                 <NavLink
                   to="/admin"
                   className={({ isActive }) =>
@@ -86,13 +86,6 @@ function Navbar() {
                   </svg>
                   Admin Panel
                 </NavLink>
-              ) : (
-                <button
-                  onClick={() => setShowAdminModal(true)}
-                  className="btn btn-outline btn-secondary btn-xs sm:btn-sm gap-1 rounded-lg ml-2"
-                >
-                  <span>🛡️</span> Enable Admin Mode
-                </button>
               )}
             </div>
 
@@ -134,23 +127,9 @@ function Navbar() {
                   <li className="sm:hidden">
                     <NavLink to="/problems" className="rounded-lg">Problems</NavLink>
                   </li>
-                  {isAdmin ? (
+                  {isAdmin && (
                     <li className="sm:hidden">
                       <NavLink to="/admin" className="rounded-lg font-semibold text-secondary">Admin Panel</NavLink>
-                    </li>
-                  ) : (
-                    <li className="sm:hidden">
-                      <button onClick={() => setShowAdminModal(true)} className="rounded-lg text-secondary">
-                        🛡️ Enable Admin Mode
-                      </button>
-                    </li>
-                  )}
-
-                  {!isAdmin && (
-                    <li>
-                      <button onClick={() => setShowAdminModal(true)} className="text-secondary rounded-lg">
-                        🛡️ Switch to Admin
-                      </button>
                     </li>
                   )}
 
@@ -171,68 +150,6 @@ function Navbar() {
           </div>
         </div>
       </nav>
-
-      {/* Admin Passcode Modal */}
-      {showAdminModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="glass-card max-w-md w-full p-6 rounded-2xl shadow-2xl animate-scale-in">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold flex items-center gap-2 text-base-content">
-                <span>🛡️</span> Unlock Admin Privileges
-              </h3>
-              <button
-                onClick={() => setShowAdminModal(false)}
-                className="btn btn-sm btn-ghost btn-circle"
-              >
-                ✕
-              </button>
-            </div>
-            <p className="text-sm text-base-content/70 mb-4">
-              Enter the Admin Passcode to upgrade your account to Admin role and unlock problem creation, updates, and seeding tools.
-            </p>
-
-            {modalError && (
-              <div className="alert alert-error py-2 text-xs mb-4">
-                <span>{modalError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handlePromote} className="space-y-4">
-              <div className="form-control">
-                <label className="label pb-1">
-                  <span className="label-text text-xs font-semibold">Admin Passcode</span>
-                  <span className="label-text-alt text-xs text-primary">Default: admin123</span>
-                </label>
-                <input
-                  type="password"
-                  value={passcode}
-                  onChange={(e) => setPasscode(e.target.value)}
-                  placeholder="Enter admin passcode"
-                  className="input input-bordered w-full bg-base-300/50 focus:input-secondary"
-                  autoFocus
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAdminModal(false)}
-                  className="btn btn-ghost btn-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn btn-secondary btn-sm gap-2"
-                >
-                  {loading ? <span className="loading loading-spinner loading-xs" /> : "Verify & Upgrade"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </>
   );
 }
