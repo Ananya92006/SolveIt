@@ -1,8 +1,10 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import axiosClient from './utils/axiosClient';
 
-// Helper to return serializable error messages
 const getErrorMessage = (error) => {
+  if (typeof error.response?.data === 'string') {
+    return error.response.data.replace(/^Error:\s*/i, '');
+  }
   return (
     error.response?.data?.message ||
     error.message ||

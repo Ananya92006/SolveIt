@@ -28,9 +28,8 @@ const adminMiddleware=async(req,res,next)=>{
     req.result=result;
     next();
 
-    }
-    catch(err){
-        res.status(401).send("Error:"+err.message);
+    } catch(err) {
+        res.status(401).json({ message: err.message || "Invalid or missing token" });
     }
 }
 module.exports=adminMiddleware;

@@ -126,7 +126,6 @@ const getProblemById = async (req, res) => {
 const getAllProblem = async (req, res) => {
   try {
     const getProblem = await Problem.find({}).select("_id title difficulty tags");
-    if (getProblem.length == 0) return res.status(404).send("Problem is missing");
     res.status(200).send(getProblem);
   } catch (err) {
     res.status(500).send("Error while fetching problems: " + err);
