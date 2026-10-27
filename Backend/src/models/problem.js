@@ -78,7 +78,7 @@ completeCode:{
         required:true
     }
 
-})
+}, { timestamps: true })
 const Problem=mongoose.model('problem',problemSchema);
 module.exports=Problem;
 

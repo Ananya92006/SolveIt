@@ -14,8 +14,7 @@ const submissionsSchema=new Schema({
     },
     code:{
         type:String,
-        required:true,
-        index:true
+        required:true
 
     },
     language:{

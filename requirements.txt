@@ -1,0 +1,93 @@
+# ==============================================================================
+# SolveIt - Project Dependencies & Requirements
+# Repository: https://github.com/Ananya92006/SolveIt
+# ==============================================================================
+# SolveIt is a full-stack algorithmic coding platform built with Node.js/Express,
+# React 19/Vite, MongoDB, Redis, Monaco Editor, Judge0 CE, and Cloudinary.
+#
+# JavaScript/Node.js dependencies are managed via npm / package.json.
+# This file provides a unified overview of all system prerequisites, runtime
+# dependencies, and external cloud services required to run SolveIt.
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. System & Runtime Prerequisites
+# ------------------------------------------------------------------------------
+# Node.js: >= 18.0.0 (LTS recommended, e.g., v18.x or v20.x or v22.x)
+# npm: >= 9.0.0 (bundled with Node.js)
+# Database: MongoDB >= 6.0 (Local instance or MongoDB Atlas Cloud URI)
+# Cache / Broker: Redis >= 6.0 (Local redis-server or Redis Cloud / Upstash)
+
+# ------------------------------------------------------------------------------
+# 2. Backend Dependencies (Node.js / Express Server)
+# Defined in: Backend/package.json
+# Install via: cd Backend && npm install
+# ------------------------------------------------------------------------------
+express>=5.1.0                  # Fast, minimalist web framework for Node.js
+mongoose>=8.19.0                # MongoDB object modeling and schema validation
+redis>=5.8.3                    # High-performance in-memory Redis client
+jsonwebtoken>=9.0.2             # JWT authentication and session token signing
+bcrypt>=6.0.0                   # Secure password hashing with salt rounds
+axios>=1.12.2                   # Promise-based HTTP client for Judge0 API calls
+cloudinary>=2.8.0               # Media upload, transformation and video hosting
+cookie-parser>=1.4.7            # HTTP request cookie parser
+cors>=2.8.5                     # Cross-Origin Resource Sharing middleware
+dotenv>=16.4.5                  # Loads environment variables from .env
+validator>=13.15.15             # String validation and sanitization (emails, passwords)
+@google/genai>=1.27.0           # Google Gemini AI developer SDK for hints & strategy
+@google/generative-ai>=0.24.1   # Google Generative AI core library
+
+# ------------------------------------------------------------------------------
+# 3. Frontend Dependencies (React 19 / Vite Application)
+# Defined in: frontend/package.json
+# Install via: cd frontend && npm install
+# ------------------------------------------------------------------------------
+react>=19.1.1                   # Core React library
+react-dom>=19.1.1               # React DOM rendering engine
+vite>=7.1.7                     # Next-generation frontend build tooling & dev server
+@monaco-editor/react>=4.7.0     # Monaco code editor (VS Code web editor)
+react-router>=7.9.4             # Declarative client-side routing
+@reduxjs/toolkit>=2.9.1         # Predictable global state management
+react-redux>=9.2.0              # React bindings for Redux store
+tailwindcss>=4.1.14             # Utility-first CSS framework (v4)
+daisyui>=5.3.2                  # Tailwind CSS component library & themes
+axios>=1.12.2                   # HTTP client for communicating with backend REST API
+react-hook-form>=7.65.0         # Performant form validation & state handling
+zod>=4.1.12                     # TypeScript-first schema validation with static type inference
+@hookform/resolvers>=5.2.2      # Form resolvers integrating Zod with React Hook Form
+
+# ------------------------------------------------------------------------------
+# 4. Frontend Development & Build Tooling
+# ------------------------------------------------------------------------------
+eslint>=9.36.0                  # JavaScript / React linting
+@vitejs/plugin-react>=5.0.4     # Vite plugin for React Fast Refresh
+@tailwindcss/vite>=4.1.14       # Official Tailwind CSS v4 Vite integration plugin
+
+# ------------------------------------------------------------------------------
+# 5. External API Services & Credentials
+# Configure these in Backend/.env (see Backend/.env.example)
+# ------------------------------------------------------------------------------
+# Judge0 CE (RapidAPI):
+#   - Service: Remote sandboxed code execution engine for C++, Java, JavaScript
+#   - Provider: https://rapidapi.com/judge0-official/api/judge0-ce
+#   - Env Var: JUDGE0_KEY
+#
+# MongoDB:
+#   - Service: Document database for users, problems, submissions, discussions
+#   - Provider: https://www.mongodb.com/atlas
+#   - Env Var: DB_CONNECT_STRING
+#
+# Redis:
+#   - Service: High-speed caching & user session store
+#   - Provider: https://redis.io or https://upstash.com
+#   - Env Var: REDIS_PASS
+#
+# Cloudinary:
+#   - Service: Video editorial upload and video streaming
+#   - Provider: https://cloudinary.com
+#   - Env Vars: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
+#
+# Google Gemini API (Optional):
+#   - Service: AI hint generation and algorithm coaching
+#   - Provider: https://aistudio.google.com
+#   - Env Var: GEMINI_KEY

@@ -233,6 +233,83 @@ const getNote = async (req, res) => {
   }
 };
 
+// Get leaderboard - all users ranked by problems solved
+const getLeaderboard = async (req, res) => {
+  try {
+    const users = await User.find({ role: { $ne: 'admin' } })
+      .select('firstName emailId problemSolved')
+      .populate('problemSolved', 'difficulty');
+
+    const leaderboard = users.map(u => {
+      const solved = u.problemSolved || [];
+      const byDiff = { easy: 0, medium: 0, hard: 0 };
+      solved.forEach(p => {
+        const d = p.difficulty?.toLowerCase();
+        if (byDiff.hasOwnProperty(d)) byDiff[d]++;
+      });
+      return {
+        _id: u._id,
+        firstName: u.firstName,
+        emailId: u.emailId,
+        totalSolved: solved.length,
+        easy: byDiff.easy,
+        medium: byDiff.medium,
+        hard: byDiff.hard,
+        // Weighted score: easy=1, medium=3, hard=5
+        score: byDiff.easy * 1 + byDiff.medium * 3 + byDiff.hard * 5
+      };
+    });
+
+    leaderboard.sort((a, b) => b.score - a.score || b.totalSolved - a.totalSolved);
+
+    // Add rank
+    leaderboard.forEach((entry, idx) => {
+      entry.rank = idx + 1;
+    });
+
+    res.status(200).json(leaderboard);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch leaderboard: ' + err.message });
+  }
+};
+
+// Get daily challenge - deterministic based on date
+const getDailyChallenge = async (req, res) => {
+  try {
+    const problems = await Problem.find({}).select('_id title difficulty tags');
+    if (problems.length === 0) {
+      return res.status(200).json(null);
+    }
+
+    // Deterministic daily selection using date hash
+    const today = new Date();
+    const dateStr = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+    let hash = 0;
+    for (let i = 0; i < dateStr.length; i++) {
+      hash = ((hash << 5) - hash) + dateStr.charCodeAt(i);
+      hash = hash & hash; // Convert to 32bit int
+    }
+    const index = Math.abs(hash) % problems.length;
+    const dailyProblem = problems[index];
+
+    // Check if current user has solved it today
+    let solvedToday = false;
+    if (req.result) {
+      const userId = req.result._id;
+      const user = await User.findById(userId);
+      solvedToday = user.problemSolved?.some(pid => pid.toString() === dailyProblem._id.toString()) || false;
+    }
+
+    res.status(200).json({
+      problem: dailyProblem,
+      solvedToday,
+      date: today.toISOString().split('T')[0]
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch daily challenge: ' + err.message });
+  }
+};
+
 module.exports = {
   createProblem,
   updateProblem,
@@ -245,5 +322,7 @@ module.exports = {
   toggleBookmark,
   getBookmarks,
   saveNote,
-  getNote
+  getNote,
+  getLeaderboard,
+  getDailyChallenge
 };

@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, NavLink } from "react-router";
+import { useSelector } from 'react-redux';
 import Editor from "@monaco-editor/react";
 import axiosClient from "../utils/axiosClient";
 import Navbar from "../components/Navbar";
@@ -33,6 +34,20 @@ function ProblemPage() {
   const [userNote, setUserNote]       = useState("");
   const [savingNote, setSavingNote]   = useState(false);
   const [noteStatus, setNoteStatus]   = useState("");
+
+  // Discussions
+  const [discussions, setDiscussions] = useState([]);
+  const [newComment, setNewComment] = useState('');
+  const [replyTo, setReplyTo] = useState(null);
+  const [replyContent, setReplyContent] = useState('');
+  const [loadingDiscussions, setLoadingDiscussions] = useState(false);
+  const [postingComment, setPostingComment] = useState(false);
+
+  // Video
+  const [videoData, setVideoData] = useState(null);
+  const [loadingVideo, setLoadingVideo] = useState(false);
+
+  const { user } = useSelector((state) => state.auth);
 
   // Fetch problem on mount
   useEffect(() => {
@@ -80,6 +95,79 @@ function ProblemPage() {
       setSavingNote(false);
     }
   };
+
+  const fetchDiscussions = useCallback(async () => {
+    setLoadingDiscussions(true);
+    try {
+      const { data } = await axiosClient.get(`/discussion/${problemId}`);
+      setDiscussions(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingDiscussions(false);
+    }
+  }, [problemId]);
+
+  const handlePostComment = async () => {
+    if (!newComment.trim()) return;
+    setPostingComment(true);
+    try {
+      await axiosClient.post(`/discussion/${problemId}`, { content: newComment.trim() });
+      setNewComment('');
+      fetchDiscussions();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setPostingComment(false);
+    }
+  };
+
+  const handlePostReply = async (parentId) => {
+    if (!replyContent.trim()) return;
+    try {
+      await axiosClient.post(`/discussion/${problemId}`, { content: replyContent.trim(), parentId });
+      setReplyContent('');
+      setReplyTo(null);
+      fetchDiscussions();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleVote = async (commentId, type) => {
+    try {
+      await axiosClient.post(`/discussion/vote/${commentId}`, { type });
+      fetchDiscussions();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    try {
+      await axiosClient.delete(`/discussion/${commentId}`);
+      fetchDiscussions();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchVideo = useCallback(async () => {
+    setLoadingVideo(true);
+    try {
+      const { data } = await axiosClient.get(`/video/problem/${problemId}`);
+      setVideoData(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingVideo(false);
+    }
+  }, [problemId]);
+
+  useEffect(() => {
+    if (leftTab === 'discussions') fetchDiscussions();
+    if (leftTab === 'video') fetchVideo();
+  }, [leftTab, fetchDiscussions, fetchVideo]);
 
   // When language changes, load starter code
   const handleLanguageChange = useCallback(
@@ -152,7 +240,7 @@ function ProblemPage() {
         <div className="w-[45%] flex flex-col border-r border-base-content/10 overflow-hidden">
           {/* Left Tabs */}
           <div className="flex border-b border-base-content/10 bg-base-100/50 px-2 pt-2 gap-1 shrink-0 overflow-x-auto">
-            {["description", "hints", "notes", "solutions", "submissions"].map((tab) => (
+            {["description", "hints", "notes", "solutions", "submissions", "discussions", "video"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setLeftTab(tab)}
@@ -164,6 +252,8 @@ function ProblemPage() {
               >
                 {tab === "hints" && <span>💡</span>}
                 {tab === "notes" && <span>📝</span>}
+                {tab === "discussions" && <span>💬</span>}
+                {tab === "video" && <span>🎥</span>}
                 {tab}
               </button>
             ))}
@@ -316,6 +406,162 @@ function ProblemPage() {
             {leftTab === "submissions" && (
               <div className="animate-fade-in">
                 <SubmissionHistory problemId={problemId} />
+              </div>
+            )}
+
+            {/* ── Discussions ── */}
+            {leftTab === "discussions" && (
+              <div className="space-y-4 animate-fade-in">
+                <h2 className="font-semibold text-sm text-base-content/70 uppercase tracking-wider flex items-center gap-2">
+                  💬 Discussions ({discussions.length})
+                </h2>
+
+                {/* New comment input */}
+                <div className="flex gap-2">
+                  <textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Share your approach or ask a question..."
+                    className="textarea textarea-bordered flex-1 bg-base-300/50 text-sm min-h-[80px]"
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={handlePostComment}
+                    disabled={postingComment || !newComment.trim()}
+                    className="btn btn-primary btn-sm gap-2"
+                  >
+                    {postingComment ? <span className="loading loading-spinner loading-xs" /> : "Post Comment"}
+                  </button>
+                </div>
+
+                {/* Comments list */}
+                {loadingDiscussions ? (
+                  <div className="flex justify-center py-8"><span className="loading loading-dots loading-md text-primary" /></div>
+                ) : discussions.length === 0 ? (
+                  <div className="text-center py-8 text-base-content/40">
+                    <p className="text-lg">💬</p>
+                    <p className="text-sm">No discussions yet. Be the first to share!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {discussions.map((comment) => (
+                      <div key={comment._id} className="glass-card rounded-xl p-4 space-y-3">
+                        {/* Comment header */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                              <span className="text-xs font-bold text-primary-content">{comment.userId?.firstName?.charAt(0)?.toUpperCase() || 'U'}</span>
+                            </div>
+                            <span className="font-medium text-sm text-base-content">{comment.userId?.firstName || 'User'}</span>
+                            <span className="text-xs text-base-content/30">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {/* Upvote */}
+                            <button onClick={() => handleVote(comment._id, 'upvote')} className="btn btn-ghost btn-xs gap-1 text-base-content/50 hover:text-success">
+                              ▲ {comment.upvotes?.length || 0}
+                            </button>
+                            {/* Downvote */}
+                            <button onClick={() => handleVote(comment._id, 'downvote')} className="btn btn-ghost btn-xs gap-1 text-base-content/50 hover:text-error">
+                              ▼ {comment.downvotes?.length || 0}
+                            </button>
+                            {/* Delete (own comment or admin) */}
+                            {(comment.userId?._id === user?._id || user?.role === 'admin') && (
+                              <button onClick={() => handleDeleteComment(comment._id)} className="btn btn-ghost btn-xs text-error/50 hover:text-error">✕</button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Comment content */}
+                        <p className="text-sm text-base-content/80 leading-relaxed whitespace-pre-wrap">{comment.content}</p>
+
+                        {/* Reply button */}
+                        <button
+                          onClick={() => setReplyTo(replyTo === comment._id ? null : comment._id)}
+                          className="btn btn-ghost btn-xs text-base-content/40 hover:text-primary"
+                        >
+                          💬 Reply ({comment.replies?.length || 0})
+                        </button>
+
+                        {/* Replies */}
+                        {comment.replies?.length > 0 && (
+                          <div className="ml-6 space-y-2 border-l-2 border-base-content/10 pl-4">
+                            {comment.replies.map((reply) => (
+                              <div key={reply._id} className="bg-base-300/30 rounded-lg p-3 space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-secondary to-accent flex items-center justify-center">
+                                      <span className="text-[10px] font-bold text-white">{reply.userId?.firstName?.charAt(0)?.toUpperCase() || 'U'}</span>
+                                    </div>
+                                    <span className="font-medium text-xs text-base-content">{reply.userId?.firstName || 'User'}</span>
+                                    <span className="text-[10px] text-base-content/30">{new Date(reply.createdAt).toLocaleDateString()}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <button onClick={() => handleVote(reply._id, 'upvote')} className="btn btn-ghost btn-xs text-[10px] text-base-content/50 hover:text-success">▲ {reply.upvotes?.length || 0}</button>
+                                    <button onClick={() => handleVote(reply._id, 'downvote')} className="btn btn-ghost btn-xs text-[10px] text-base-content/50 hover:text-error">▼ {reply.downvotes?.length || 0}</button>
+                                    {(reply.userId?._id === user?._id || user?.role === 'admin') && (
+                                      <button onClick={() => handleDeleteComment(reply._id)} className="btn btn-ghost btn-xs text-[10px] text-error/50 hover:text-error">✕</button>
+                                    )}
+                                  </div>
+                                </div>
+                                <p className="text-xs text-base-content/70 leading-relaxed whitespace-pre-wrap">{reply.content}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Reply input */}
+                        {replyTo === comment._id && (
+                          <div className="ml-6 flex gap-2 items-start">
+                            <textarea
+                              value={replyContent}
+                              onChange={(e) => setReplyContent(e.target.value)}
+                              placeholder="Write a reply..."
+                              className="textarea textarea-bordered textarea-sm flex-1 bg-base-300/50 text-xs min-h-[60px]"
+                            />
+                            <div className="flex flex-col gap-1">
+                              <button onClick={() => handlePostReply(comment._id)} disabled={!replyContent.trim()} className="btn btn-primary btn-xs">Reply</button>
+                              <button onClick={() => { setReplyTo(null); setReplyContent(''); }} className="btn btn-ghost btn-xs">Cancel</button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Video Solution ── */}
+            {leftTab === "video" && (
+              <div className="space-y-4 animate-fade-in">
+                <h2 className="font-semibold text-sm text-base-content/70 uppercase tracking-wider flex items-center gap-2">
+                  🎥 Video Editorial
+                </h2>
+
+                {loadingVideo ? (
+                  <div className="flex justify-center py-8"><span className="loading loading-dots loading-md text-primary" /></div>
+                ) : !videoData ? (
+                  <div className="text-center py-12 text-base-content/40">
+                    <p className="text-3xl">🎥</p>
+                    <p className="text-sm mt-2">No video solution available yet.</p>
+                    <p className="text-xs mt-1">Check back later or explore the text solutions tab.</p>
+                  </div>
+                ) : (
+                  <div className="rounded-xl overflow-hidden bg-black">
+                    <video
+                      src={videoData.secureUrl}
+                      controls
+                      className="w-full rounded-xl"
+                      style={{ maxHeight: '500px' }}
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                    <div className="p-3 bg-base-300/40">
+                      <p className="text-xs text-base-content/50">Duration: {Math.round((videoData.duration || 0) / 60)} min</p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

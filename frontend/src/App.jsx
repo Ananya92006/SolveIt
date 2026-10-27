@@ -13,6 +13,8 @@ import AdminUpdate from "./components/AdminUpdate";
 import AdminUpload from "./components/AdminUpload";
 import AdminVideo from "./components/AdminVideo";
 import ProblemPage from "./pages/ProblemPage";
+import Profile from "./pages/Profile";
+import Leaderboard from "./pages/Leaderboard";
 
 function App() {
   const dispatch = useDispatch();
@@ -44,6 +46,8 @@ function App() {
       <Route path="/" element={isAuthenticated ? <Home /> : <Navigate to="/signup" />} />
       <Route path="/problems" element={isAuthenticated ? <Homepage /> : <Navigate to="/signup" />} />
       <Route path="/problem/:problemId" element={isAuthenticated ? <ProblemPage /> : <Navigate to="/login" />} />
+      <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/login" />} />
+      <Route path="/leaderboard" element={isAuthenticated ? <Leaderboard /> : <Navigate to="/login" />} />
 
       {/* Admin routes */}
       <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/" />} />

@@ -142,4 +142,18 @@ const deleteVideo = async (req, res) => {
   }
 };
 
-module.exports = { generateUploadSignature, saveVideoMetadata, deleteVideo };
+// Get video solution by problem ID (public/user route)
+const getVideoByProblemId = async (req, res) => {
+  try {
+    const { problemId } = req.params;
+    const video = await SolutionVideo.findOne({ problemId });
+    if (!video) {
+      return res.status(200).json(null);
+    }
+    res.status(200).json(video);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch video: ' + err.message });
+  }
+};
+
+module.exports = { generateUploadSignature, saveVideoMetadata, deleteVideo, getVideoByProblemId };

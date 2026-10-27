@@ -8,6 +8,7 @@ const redisClient = require('./config/redis');
 const problemRouter = require("./routes/problemCreator");
 const submitRouter = require("./routes/submit");
 const videoRouter = require("./routes/videoCreator");
+const discussionRouter = require('./routes/discussion');
 
 const cors = require('cors');
 
@@ -21,6 +22,7 @@ app.use('/user', authRouter);
 app.use('/problem', problemRouter);
 app.use('/submission', submitRouter);
 app.use('/video', videoRouter);
+app.use('/discussion', discussionRouter);
 
 const { DEFAULT_PROBLEMS } = require("./utils/seedData");
 const Problem = require("./models/problem");

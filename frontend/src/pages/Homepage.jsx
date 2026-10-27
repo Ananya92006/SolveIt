@@ -20,15 +20,18 @@ function Homepage() {
   const [loading, setLoading]             = useState(true);
   const [search, setSearch]               = useState("");
   const [filters, setFilters]             = useState({ difficulty: "all", tag: "all", status: "all" });
+  const [dailyChallenge, setDailyChallenge] = useState(null);
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [{ data: allProblems }, { data: solvedData }, { data: bookmarkData }] = await Promise.all([
+        const [{ data: allProblems }, { data: solvedData }, { data: bookmarkData }, dailyResult] = await Promise.all([
           axiosClient.get("/problem/getAllProblem"),
           user ? axiosClient.get("/problem/problemSolvedByUser") : Promise.resolve({ data: null }),
           user ? axiosClient.get("/problem/bookmark/list") : Promise.resolve({ data: [] }),
+          axiosClient.get('/problem/daily').catch(() => ({ data: null }))
         ]);
+        if (dailyResult?.data) setDailyChallenge(dailyResult.data);
         setProblems(Array.isArray(allProblems) ? allProblems : []);
         const solved = solvedData?.problemSolved ?? solvedData?.solvedProblems ?? [];
         setSolvedIds(new Set(Array.isArray(solved) ? solved.map((p) => p._id) : []));
@@ -68,6 +71,41 @@ function Homepage() {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Daily Challenge Banner */}
+        {dailyChallenge?.problem && (
+          <div className="mb-8 animate-slide-up">
+            <NavLink
+              to={`/problem/${dailyChallenge.problem._id}`}
+              className="block glass-card rounded-2xl p-6 hover-glow transition-all duration-300 border-l-4 border-l-accent group"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-accent/15 flex items-center justify-center text-2xl">
+                    🎯
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-base text-base-content group-hover:text-accent transition-colors">Daily Challenge</h3>
+                      <span className="badge badge-accent badge-outline badge-sm">Today</span>
+                      {dailyChallenge.solvedToday && <span className="badge badge-success badge-sm gap-1">✓ Solved</span>}
+                    </div>
+                    <p className="text-sm text-base-content/60 mt-0.5">{dailyChallenge.problem.title}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`badge badge-sm badge-outline ${
+                    dailyChallenge.problem.difficulty === 'easy' ? 'badge-success' :
+                    dailyChallenge.problem.difficulty === 'medium' ? 'badge-warning' : 'badge-error'
+                  }`}>{dailyChallenge.problem.difficulty}</span>
+                  <svg className="w-5 h-5 text-base-content/30 group-hover:text-accent group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </div>
+            </NavLink>
+          </div>
+        )}
+
         {/* Stats Row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8 animate-fade-in">
           {[

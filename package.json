@@ -1,0 +1,28 @@
+{
+  "name": "solveit",
+  "version": "1.0.0",
+  "description": "SolveIt - Interactive LeetCode-style algorithmic coding platform with multi-language execution, video tutorials, discussions, and AI hints",
+  "private": true,
+  "scripts": {
+    "install:all": "npm --prefix Backend install && npm --prefix frontend install",
+    "dev:backend": "npm --prefix Backend start",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "start": "npm --prefix Backend start"
+  },
+  "keywords": [
+    "leetcode",
+    "coding-platform",
+    "monaco-editor",
+    "judge0",
+    "react",
+    "vite",
+    "express",
+    "mongodb",
+    "redis",
+    "cloudinary",
+    "gemini"
+  ],
+  "author": "Ananya",
+  "license": "MIT"
+}

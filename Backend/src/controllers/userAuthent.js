@@ -179,4 +179,140 @@ const deleteProfile = async (req, res) => {
   }
 };
 
-module.exports = { register, login, logout, makeAdmin, adminRegister, deleteProfile };
+// Update profile (first name, last name)
+const updateProfile = async (req, res) => {
+  try {
+    const userId = req.result._id;
+    const { firstName, lastName } = req.body;
+
+    if (!firstName || firstName.trim().length < 3) {
+      return res.status(400).json({ message: 'First name must be at least 3 characters' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { firstName: firstName.trim(), lastName: lastName?.trim() || '' },
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({
+      user: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        emailId: user.emailId,
+        _id: user._id,
+        role: user.role
+      },
+      message: 'Profile updated successfully'
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message || 'Failed to update profile' });
+  }
+};
+
+// Change password
+const changePassword = async (req, res) => {
+  try {
+    const userId = req.result._id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Both current and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters' });
+    }
+
+    const user = await User.findById(userId);
+    const match = await bcrypt.compare(currentPassword, user.password);
+    if (!match) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.status(200).json({ message: 'Password changed successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message || 'Failed to change password' });
+  }
+};
+
+// Get user stats for profile page
+const getUserStats = async (req, res) => {
+  try {
+    const userId = req.result._id;
+    const user = await User.findById(userId)
+      .populate('problemSolved', '_id title difficulty')
+      .populate('bookmarks', '_id title difficulty tags');
+
+    const submissions = await Submission.find({ userId }).sort({ createdAt: -1 });
+
+    const totalSubmissions = submissions.length;
+    const acceptedSubmissions = submissions.filter(s => s.status === 'accepted').length;
+    const acceptanceRate = totalSubmissions > 0 ? Math.round((acceptedSubmissions / totalSubmissions) * 100) : 0;
+
+    // Group solved by difficulty
+    const solvedByDifficulty = { easy: 0, medium: 0, hard: 0 };
+    (user.problemSolved || []).forEach(p => {
+      const diff = p.difficulty?.toLowerCase();
+      if (solvedByDifficulty.hasOwnProperty(diff)) solvedByDifficulty[diff]++;
+    });
+
+    // Build activity data (last 180 days)
+    const activityMap = {};
+    const now = new Date();
+    for (let i = 0; i < 180; i++) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().split('T')[0];
+      activityMap[key] = 0;
+    }
+    submissions.forEach(s => {
+      if (s.status === 'accepted') {
+        const key = new Date(s.createdAt).toISOString().split('T')[0];
+        if (activityMap.hasOwnProperty(key)) activityMap[key]++;
+      }
+    });
+
+    // Recent 10 submissions
+    const recentSubmissions = submissions.slice(0, 10).map(s => ({
+      _id: s._id,
+      problemId: s.problemId,
+      language: s.language,
+      status: s.status,
+      runtime: s.runtime,
+      memory: s.memory,
+      testCasesPassed: s.testCasesPassed,
+      testCasesTotal: s.testCasesTotal,
+      createdAt: s.createdAt
+    }));
+
+    res.status(200).json({
+      user: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        emailId: user.emailId,
+        role: user.role,
+        createdAt: user.createdAt
+      },
+      stats: {
+        totalSolved: user.problemSolved?.length || 0,
+        solvedByDifficulty,
+        totalSubmissions,
+        acceptedSubmissions,
+        acceptanceRate,
+        streak: user.streak || { current: 0, longest: 0 }
+      },
+      activity: activityMap,
+      recentSubmissions,
+      bookmarks: user.bookmarks || [],
+      solvedProblems: user.problemSolved || []
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message || 'Failed to fetch user stats' });
+  }
+};
+
+module.exports = { register, login, logout, makeAdmin, adminRegister, deleteProfile, updateProfile, changePassword, getUserStats };

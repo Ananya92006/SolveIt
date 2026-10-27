@@ -35,8 +35,7 @@ const userSchema = new Schema({
         type:[{
             type:Schema.Types.ObjectId,
             ref:'problem'
-        }],
-        unique:true
+        }]
     },
     bookmarks: [{
         type: Schema.Types.ObjectId,
@@ -47,6 +46,11 @@ const userSchema = new Schema({
         content: { type: String, default: '' },
         updatedAt: { type: Date, default: Date.now }
     }],
+    streak: {
+        current: { type: Number, default: 0 },
+        longest: { type: Number, default: 0 },
+        lastSolveDate: { type: Date, default: null }
+    },
     password:{
         type:String,
         required:true
